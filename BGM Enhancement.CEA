@@ -1,0 +1,363 @@
+[ENABLE]
+{$lua}
+local reachOutSoundInfo = AOBScan("03 03 00 B4 00 00 00 33 00 01 0F 00 03 9D 01 00 00 86 01 00 00 CB 01 00 00 B4 52 01 00 00 C0")
+registerSymbol("reachsoundIndex", reachOutSoundInfo[1])
+{$asm}
+
+aobscanmodule(aobSong,P4G.exe,66 89 77 24 5E) // should be unique
+alloc(newmem,$1000)
+
+label(uniqueOptionBossBGM)
+label(uniqueMiniBossBGM)
+label(uniqueBossBGM)
+label(randomABattleBGM)
+label(randomRBattleBGM)
+label(voidquestBattleBGM)
+label(redirectSound)
+label(code)
+label(return)
+
+newmem:
+
+uniqueOptionBossBGM:
+  // starting index of replacement mini boss bgms
+  mov eax, '916'
+
+  // check if in castle
+  cmp [P4G.exe+A0EFD0],'28'
+  jne SaunaOBBGM
+  add eax, 0
+  jmp ContinueOB
+  // check if in sauna
+  SaunaOBBGM:
+  cmp [P4G.exe+A0EFD0],'29'
+  jne MaruOBBGM
+  add eax, 1
+  jmp ContinueOB
+  // check if in maru
+  MaruOBBGM:
+  cmp [P4G.exe+A0EFD0],'30'
+  jne VoidOBBGM
+  add eax, 2
+  jmp ContinueOB
+  // check if in void
+  VoidOBBGM:
+  cmp [P4G.exe+A0EFD0],'31'
+  jne LabOBBGM
+  add eax, 3
+  jmp ContinueOB
+  // check if in lab
+  LabOBBGM:
+  cmp [P4G.exe+A0EFD0],'32'
+  jne HeavenOBBGM
+  add eax, 4
+  jmp ContinueOB
+  // check if in heaven
+  HeavenOBBGM:
+  cmp [P4G.exe+A0EFD0],'33'
+  jne OriginalOBSong
+  add eax, 5
+  jmp ContinueOB
+  // just play original song
+  OriginalOBSong:
+  mov eax, '56'
+  jmp ContinueOB
+
+
+  ContinueOB:
+  // set to play reach out index in xsb(2)
+  mov [edi+24],2
+  // set reach out's xwb index in xsb info to eax
+  mov [reachsoundIndex+2B],eax
+  // fix loop byte
+  mov [reachsoundIndex+2E],FF
+
+  pop esi
+  jmp return
+
+uniqueMiniBossBGM:
+  // starting index of replacement mini boss bgms
+  mov eax, '907'
+
+  // check if in tv (first mini boss)
+  cmp [P4G.exe+A0EFD0],'27'
+  jne CastleMBBGM
+  mov eax, '47'
+  jmp ContinueMB
+  // check if in castle
+  CastleMBBGM:
+  cmp [P4G.exe+A0EFD0],'28'
+  jne SaunaMBBGM
+  add eax, 0
+  jmp ContinueMB
+  // check if in sauna
+  SaunaMBBGM:
+  cmp [P4G.exe+A0EFD0],'29'
+  jne MaruMBBGM
+  add eax, 1
+  jmp ContinueMB
+  // check if in maru
+  MaruMBBGM:
+  cmp [P4G.exe+A0EFD0],'30'
+  jne VoidMBBGM
+  add eax, 2
+  jmp ContinueMB
+  // check if in void
+  VoidMBBGM:
+  cmp [P4G.exe+A0EFD0],'31'
+  jne LabMBBGM
+  add eax, 3
+  jmp ContinueMB
+  // check if in lab
+  LabMBBGM:
+  cmp [P4G.exe+A0EFD0],'32'
+  jne HeavenMBBGM
+  add eax, 4
+  jmp ContinueMB
+  // check if in heaven
+  HeavenMBBGM:
+  cmp [P4G.exe+A0EFD0],'33'
+  jne InabaMBBGM
+  add eax, 5
+  jmp ContinueMB
+  // check if in inaba
+  InabaMBBGM:
+  cmp [P4G.exe+A0EFD0],'24'
+  jne ForestMBBGM
+  add eax, 6
+  jmp ContinueMB
+  // check if in forest
+  ForestMBBGM:
+  cmp [P4G.exe+A0EFD0],'54'
+  jne YomotsuMBBGM
+  add eax, 7
+  jmp ContinueMB
+  // check if in yomotsu
+  YomotsuMBBGM:
+  cmp [P4G.exe+A0EFD0],'35'
+  jne ContinueMB
+  add eax, 8
+  jmp ContinueMB
+
+
+  ContinueMB:
+  // set to play reach out index in xsb(2)
+  mov [edi+24],2
+  // set reach out's xwb index in xsb info to eax
+  mov [reachsoundIndex+2B],eax
+  // fix loop byte
+  mov [reachsoundIndex+2E],FF
+
+  pop esi
+  jmp return
+
+// called when boss bgm is played
+uniqueBossBGM:
+
+  // starting index of replacement boss bgms
+  mov eax, '898'
+
+  // check if in tv (yosuke boss fight)
+  cmp [P4G.exe+A0EFD0],'27'
+  jne CastleBGM
+  add eax, 0
+  jmp Continue
+  // check if in castle
+  CastleBGM:
+    cmp [P4G.exe+A0EFD0],'28'
+    jne SaunaBGM
+    // check if i'll face myself battle is playing in castle(yukiko boss fight)
+    cmp si,'3'
+    je YukikoBGM
+    add eax, 1
+    jmp Continue
+  // Yukiko BGM
+  YukikoBGM:
+    add eax, 2
+    jmp Continue
+  // check if in sauna
+  SaunaBGM:
+  cmp [P4G.exe+A0EFD0],'29'
+  jne MaruBGM
+  add eax, 3
+  jmp Continue
+  // check if in maru
+  MaruBGM:
+    cmp [P4G.exe+A0EFD0],'30'
+    jne LabBGM
+    // check if i'll face myself re 2 is playing in maru (teddie boss fight)
+    cmp si, '57'
+    je TeddieBGM
+    add eax, 4
+    jmp Continue
+  TeddieBGM:
+    add eax, 5
+    jmp Continue
+  // check if in lab
+  LabBGM:
+  cmp [P4G.exe+A0EFD0],'32'
+  jne NamaBGM
+  add eax, 6
+  jmp Continue
+  // check if in heaven
+  NamaBGM:
+  cmp [P4G.exe+A0EFD0],'33'
+  jne AdachiBGM
+  // check if i'll face myself is playing heaven
+  cmp si,'3'
+  je MarBGM
+  mov eax, 4
+  jmp Continue
+  // check if in inaba
+  AdachiBGM:
+  cmp [P4G.exe+A0EFD0],'24'
+  add eax, 7
+  jmp Continue
+  // Mar BGM
+  MarBGM:
+  add eax, 8
+  jmp Continue
+  Continue:
+
+  // set to play reach out index in xsb(2)
+  mov [edi+24],2
+  // set reach out's xwb index in xsb info to eax
+  mov [reachsoundIndex+2B],eax
+  // fix loop byte
+  mov [reachsoundIndex+2E],FF
+
+  pop esi
+  jmp return
+
+voidquestBattleBGM:
+  // check if regular battle bgm
+  cmp si, '55'
+  // jump if advantage battle bgm
+  jne voidAdvantage
+  mov eax, '896'
+  jmp continueVoid
+
+  voidAdvantage:
+  mov eax, '897'
+  jmp continueVoid
+
+  continueVoid:
+  // set to play reach out index in xsb(1)
+  mov [edi+24],2
+  // set reach out's xwb index in xsb info to edx
+  mov [reachsoundIndex+2B],eax
+  // fix loop byte
+  mov [reachsoundIndex+2E],FF
+
+  pop esi
+  jmp return
+
+randomABattleBGM:
+  // check if in void quest
+  cmp [P4G.exe+A0EFD0],'31'
+  je voidquestBattleBGM
+
+  // sets eax to random 2 byte integer
+  call msvcrt.rand
+  //dividend high half = 0.  prefer  xor edx,edx
+  mov edx,0
+  // divisor can be any register or memory
+  mov ebx,'5'
+  //Divides eax by ebx; edx = remainder, eax = quotient?
+  div ebx
+
+  // add starting index of advantage bgm
+  add edx,'891'
+  // set to play reach out index in xsb(1)
+  mov [edi+24],2
+  // set reach out's xwb index in xsb info to edx
+  mov [reachsoundIndex+2B],edx
+  // fix loop byte
+  mov [reachsoundIndex+2E],FF
+
+  //mov $reachsoundindex,edx
+  pop esi
+  jmp return
+
+randomRBattleBGM:
+  // check if in void quest
+  cmp [P4G.exe+A0EFD0],'31'
+  je voidquestBattleBGM
+
+  // sets eax to random 2 byte integer
+  call msvcrt.rand
+  //dividend high half = 0.  prefer  xor edx,edx
+  mov edx,0
+  // divisor can be any register or memory
+  mov ebx,'5'
+  //Divides eax by ebx; edx = remainder, eax = quotient?
+  div ebx
+
+  // add starting index of interviews in xwb
+  add edx,'886'
+  // set to play reach out index in xsb(1)
+  mov [edi+24],2
+  // set reach out's xwb index in xsb info to edx
+  mov [reachsoundIndex+2B],edx
+  // fix loop byte
+  mov [reachsoundIndex+2E],FF
+
+  //mov $reachsoundindex,edx
+  pop esi
+  jmp return
+
+redirectSound:
+  // check if battle bgm?
+  cmp [edi+30c],1
+  jne code
+  // set data to whatever it was supposed to be
+  mov [edi+24],si
+
+  // check if time to make history is played
+  cmp si,'55'
+  je randomRBattleBGM
+  // check if reach out to the truth is played
+  cmp si,'2'
+  je randomABattleBGM
+
+  // check if i'll face myself battle is played (bosses)
+  cmp si,'3'
+  je uniqueBossBGM
+  // check if a new world fool is played (bosses)
+  cmp si,'4'
+  je uniqueBossBGM
+  // check if i'll face myself (reincarnation) 2 is played (bosses)
+  cmp si,'57'
+  je uniqueBossBGM
+
+  // check if reach out first battle is played (Mini Bosses)
+  cmp si,'47'
+  je uniqueMiniBossBGM
+
+  // check if i'll face myself (reincarnation) 1 is played (optional bosses)
+  cmp si,'56'
+  je uniqueOptionBossBGM
+
+  pop esi
+  jmp return
+
+code:
+  mov [edi+24],si
+  pop esi
+  jmp return
+
+aobSong:
+  jmp redirectSound
+return:
+registersymbol(aobSong)
+
+[DISABLE]
+
+aobSong:
+  db 66 89 77 24 5E
+
+unregistersymbol(aobSong)
+{$lua}
+unregisterSymbol("reachsoundIndex")
+{$asm}
+dealloc(newmem)
