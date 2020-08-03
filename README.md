@@ -3,7 +3,7 @@ Expands the amount of BGM that P4G uses via a Cheat Engine AOB script. Adds the 
 
 Requires editing of ".../data00004/init_free.bin".
 
----Indexes Used---
+#---Indexes Used---
 886-890 - Battle Regular BGMs
 891-895 - Battle Advantage BGMs
 896-897 - Void Quest Battle BGMs
